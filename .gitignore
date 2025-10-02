@@ -1,0 +1,108 @@
+# --- Python / venv ---
+.venv/
+venv/
+ENV/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pkl
+.env
+
+# Byte-compiled / cache
+*.python-version
+*.coverage
+.coverage*
+.cache/
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+.pyre/
+ruff_cache/
+pytestdebug.log
+
+# Virtualenv metadata
+pip-wheel-metadata/
+pip-log.txt
+
+# --- OS / Editors ---
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+# IDEs
+.vscode/
+.vscode-test/
+.idea/
+*.iml
+
+# --- Env / Secrets ---
+.env
+.env.*
+*.key
+*.pem
+*.crt
+*.creds
+*.secrets
+*.token
+
+# --- Logs / temp ---
+logs/
+*.log
+tmp/
+temp/
+*.tmp
+
+# --- Data / artifacts ---
+data/
+datasets/
+outputs/
+artifacts/
+checkpoints/
+wandb/
+comet-ml/
+mlruns/
+.bundles/
+bundles_out/
+*.ipynb_checkpoints/
+
+# --- App-specific (from Compliance Copilot 2.0) ---
+/data/
+/mnt/data/
+/tmp/
+/__bundle__/
+/evidence_bundles/
+/reports/
+
+# --- Docker ---
+**/.dockerignore
+docker/**/cache/
+*.pid
+
+# --- Node (if any UI/scripts) ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-lock.yaml
+package-lock.json
+
+# --- Build / dist ---
+build/
+dist/
+.eggs/
+*.egg-info/
+*.egg
+*.whl
+
+# --- Coverage / test ---
+htmlcov/
+coverage.xml
+test-results/
