@@ -1,41 +1,49 @@
-from fastapi import FastAPI, HTTPException
-from app.models.schemas import IngestItem, AskRequest, AskResponse, EvidenceBundleRequest
-from app.orchestrator import build_container
+from fastapi import FastAPI
+from fastapi import Body
+from fastapi.responses import ORJSONResponse
+from app.config import get_settings
+from app.models.schemas import IngestPolicy, IngestEvidence, AskRequest, AskResponse
+from app.services.weaviate_store import WeaviateStore
+from app.services.rag import RAGService
+from app.utils.bundles import write_bundle
 
-svc = build_container()
-app = FastAPI(title="Compliance Copilot 2.0")
+app = FastAPI(title="Compliance Copilot", default_response_class=ORJSONResponse)
+settings = get_settings()
+store = WeaviateStore()
+rag = RAGService()
+
+@app.get("/healthz")
+def healthz():
+    return {"ok": True, "env": settings.APP_ENV}
 
 @app.post("/ingest/policy")
-def ingest_policy(item: IngestItem):
-    svc["store"].upsert_policy(item)
-    return {"status": "ok", "id": item.id}
+def ingest_policy(payload: IngestPolicy):
+    obj = {
+        "title": payload.title,
+        "framework": payload.framework,
+        "control_ids": payload.control_ids,
+        "text": payload.text,
+        "metadata": "{}" if not payload.metadata else str(payload.metadata),
+    }
+    store.upsert_policy(obj, id_=payload.id)
+    return {"status": "ok"}
 
 @app.post("/ingest/evidence")
-def ingest_evidence(item: IngestItem):
-    svc["store"].upsert_evidence(item)
-    return {"status": "ok", "id": item.id}
+def ingest_evidence(payload: IngestEvidence):
+    obj = {
+        "title": payload.title,
+        "text": payload.text,
+        "metadata": "{}" if not payload.metadata else str(payload.metadata),
+    }
+    store.upsert_evidence(obj, id_=payload.id)
+    return {"status": "ok"}
 
 @app.post("/ask", response_model=AskResponse)
 async def ask(req: AskRequest):
-    try:
-        res = await svc["agent"].ask(
-            question=req.question,
-            frameworks=req.frameworks,
-            force_live_checks=req.force_live_checks,
-            crosswalk=req.crosswalk
-        )
-        return AskResponse(**res)
-    except Exception as e:
-        raise HTTPException(500, f"failure: {e}")
+    result = await rag.answer(req.question, req.frameworks, req.limit)
+    return AskResponse(answer=result["answer"], citations=result["citations"])
 
 @app.post("/evidence/bundle")
-def bundle(req: EvidenceBundleRequest):
-    # In reality, pull from Weaviate + MCP (Jira tickets, Okta reports, etc.)
-    dummy_items = [{"type": "policy", "title": "Encryption Policy", "path": "/policies/encryption.pdf"}]
-    path = svc["bundler"].bundle(req.topic, dummy_items)
-    return {"bundle_path": path}
-
-@app.get("/audit/simulate/{control}")
-def simulate(control: str):
-    questions = svc["agent"].audit_simulator(control)
-    return {"control": control, "questions": questions}
+def evidence_bundle(topic: str = Body(..., embed=True), content: str = Body("", embed=True)):
+    path = write_bundle(settings.BUNDLE_DIR, topic, content or f"Bundle for {topic}")
+    return {"status": "ok", "path": path}

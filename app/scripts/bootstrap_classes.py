@@ -1,4 +1,5 @@
 from app.services.weaviate_store import WeaviateStore
-s = WeaviateStore()
-s.ensure_schema()
-print("Done.")
+
+if __name__ == "__main__":
+    WeaviateStore()  # ensure_schema() runs in ctor
+    print("Weaviate classes ensured.")

@@ -1,22 +1,16 @@
-import uuid, glob
-from app.models.schemas import IngestItem
+from pathlib import Path
+import json
 from app.services.weaviate_store import WeaviateStore
 
-def run(evidence_glob="data/evidence/*.txt"):
-    store = WeaviateStore(); store.ensure_schema()
-    for f in glob.glob(evidence_glob):
-        text = open(f).read()
-        item = IngestItem(
-            id=str(uuid.uuid4()),
-            title=f.split("/")[-1],
-            framework=None,
-            control_ids=[],
-            text=text,
-            metadata={"path": f}
-        )
-        store.upsert_evidence(item)
-    print("Done.")
-
 if __name__ == "__main__":
-    run()
-    
+    store = WeaviateStore()
+    root = Path("/data/evidence")
+    for p in root.glob("*.*"):
+        text = p.read_text(encoding="utf-8", errors="ignore")
+        obj = {
+            "title": p.stem,
+            "text": text,
+            "metadata": json.dumps({"path": str(p)}),
+        }
+        store.upsert_evidence(obj)
+        print(f"Ingested evidence: {p.name}")
